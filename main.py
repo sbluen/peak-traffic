@@ -4,26 +4,53 @@ Created on May 15, 2015
 @author: sbluen
 '''
 
+import sys
+
 nodes = {}
+
+scanned_nodes = set()
 
 class Node():
     def __init__(self, name):
         self.name=name
         self.outg = {} #outgoing edges
         self.edges = {} #bidirectional edges
-    def __cmp__(self, other):
-        return self.name.__cmp__(other.name)
+        
+    def __eq__(self, other):
+        return self.name.__eq__(other.name)
+    
+    def __lt__(self, other):
+        return self.name<other.name
+    
+    def __hash__(self):
+        return hash(self.name)
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return repr(self.name)
  
-class Clique(list):
-    """A modified list with a flag to determine whether a clique has been used
-    in a larger clique, and should therefore not be part of the final answer.
+class Clique():
+    """A container with a frozenset of data and the subclique flag. 
     """
 
-    def __init__(self, *args, **kwargs):
-        super.__init__(*args, **kwargs)
+    def __init__(self, data):
+        self.data = frozenset(data)
         self.subclique = False
+    
+    def __hash__(self):
+        return hash(self.data)
+    
+    def __eq__(self, other):
+        return self.data == other.data
+    
+    def __str__(self):
+        return str(self.data)
+    
+    def __repr__(self):
+        return repr(self.data)
 
-import sys
 with open(sys.argv[1], "r") as f:
     for line in f:
         
@@ -56,7 +83,7 @@ with open(sys.argv[1], "r") as f:
         nodes[sender].outg[recip] = (nodes[recip])
 
 
-cliques = set() * (len(nodes)+1)
+cliques = [set() for i in range(len(nodes)+1)]
 
 #put cliques of 3 nodes in cliques
 if len(nodes) < 3:
@@ -71,36 +98,45 @@ else:
                     continue
                 if node in link2.edges.values():
                     #sorted by name
-                    cliques[3] = cliques[3] or Clique(sorted([node, link1, link2]))
+                    temp_clique = Clique([node, link1, link2])
+                    cliques[3].add(temp_clique)
 
 #Find larger cliques
 #Not +2 because at len(nodes), we don't have any other nodes to join into the
 #clique.
 for degree in range(4, len(nodes)+1):
     for clique in cliques[degree-1]:
-        for node in clique:
+        for node in clique.data:
             
             #See if that node is in a new clique containing just the current
             #clique and the new node.
             in_clique = True
-            for link in node.edges:
-                for node in clique:
-                    if node not in link.edges:
+            for link in node.edges.values():
+                if link in clique.data:
+                    #This would not make a larger clique of unique elements
+                    continue
+                if link in scanned_nodes:
+                    #Scanning this again would waste a lot of time.
+                    continue
+                for node in clique.data:
+                    if node not in link.edges.values():
                         in_clique = False
+                scanned_nodes.add(link)
             
             if in_clique:
                 clique.subclique = True
-                temp_clique = Clique(sorted(clique + [link]))
-                cliques[degree] = cliques[degree] or temp_clique
+                temp_clique = Clique(clique.data | set((link,)))
+                cliques[degree].add(temp_clique)
+    scanned_nodes = set()
                 
-#Final code to take only the cliques that are not subcluques
+#Final code to take only the cliques that are not subcluques.
+#Also takes them out of their containers.
 final_cliques = []
 for degree in range(3, len(nodes)+1):
     for clique in cliques[degree]:
         if not clique.subclique:
-            final_cliques.append(clique)
-final_cliques = sorted(final_cliques)
+            final_cliques.append(list(clique.data))
 
 #Printing code
-for clique in final_cliques:
-    print ", ".join(clique)
+for clique in sorted(final_cliques):
+    print ", ".join(str(node)+"@facebook.com" for node in sorted(clique))
