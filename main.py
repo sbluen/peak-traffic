@@ -5,6 +5,8 @@ Created on May 15, 2015
 '''
 
 import sys
+import time
+import collections
 
 nodes = {}
 
@@ -12,12 +14,12 @@ scanned_nodes = set()
 
 class Node():
     def __init__(self, name):
-        self.name=name
+        self.name = name
         self.outg = {} #outgoing edges
         self.edges = {} #bidirectional edges
         
-    def __eq__(self, other):
-        return self.name.__eq__(other.name)
+#     def __eq__(self, other):
+#         return self.name.__eq__(other.name)
     
     def __lt__(self, other):
         return self.name<other.name
@@ -32,13 +34,28 @@ class Node():
         return repr(self.name)
  
 class Clique():
-    """A container with a frozenset of data and the subclique flag. 
+    """A container with a frozenset of data containing nodes
+    and the subclique flag.
+    Also stored a dict of adjacent nodes for searching for more cliques in. 
     """
 
     def __init__(self, data):
+        """Stores data. """
         self.data = frozenset(data)
         self.subclique = False
-    
+        if len(data) == 3:
+            self.adj = {}
+            self.counts = [set() for i in range(len(nodes)-2)]  # @UnusedVariable
+            for node in data:
+                if node not in self.adj:
+                    self.adj[node] = 1
+                    self.counts[1] |= node 
+                else:
+                    self.counts[self.adj[node]] -= node
+                    self.counts[self.adj[node]+1] |= node
+                    self.adj[node] += 1
+                    
+            
     def __hash__(self):
         return hash(self.data)
     
@@ -104,6 +121,7 @@ else:
 #Find larger cliques
 #Not +2 because at len(nodes), we don't have any other nodes to join into the
 #clique.
+t1 = time.time()
 for degree in range(4, len(nodes)+1):
     for clique in cliques[degree-1]:
         for node in clique.data:
@@ -140,3 +158,5 @@ for degree in range(3, len(nodes)+1):
 #Printing code
 for clique in sorted(final_cliques):
     print ", ".join(str(node)+"@facebook.com" for node in sorted(clique))
+t2 = time.time()
+print(t2-t1)
