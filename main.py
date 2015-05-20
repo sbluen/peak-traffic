@@ -6,11 +6,10 @@ Created on May 15, 2015
 
 import sys
 import time
-import collections
 
 nodes = {}
 
-scanned_nodes = set()
+# scanned_nodes = set()
 
 class Node():
     def __init__(self, name):
@@ -41,25 +40,26 @@ class Clique():
     """
 
     def __init__(self, data):
-        """Stores data. """
+        """Stores data. 
+        data should be an iterable."""
         self.data = frozenset(data)
         self.subclique = False
         if len(data) == 3:
             #adj is used to search by name
             #counts is used to search by number
             self.adj = {}
-            self.counts = [set() for i in range(len(nodes)-2)]# @UnusedVariable
-            for node in data:
+            self.counts = [set() for i in range(len(nodes)+1)]# @UnusedVariable
+            for node in self.data:
                 for link in node.edges.values():
-                    if link in data:
+                    if link in self.data:
                         #Whatever is in this clique is not adjacent to it.
                         continue
                     if link not in self.adj:
-                        self.adj[node] = 1
-                        self.counts[1] |= link 
+                        self.adj[link] = 1
+                        self.counts[1].add(link)
                     else:
-                        self.counts[self.adj[link]] -= link
-                        self.counts[self.adj[link]+1] |= link
+                        self.counts[self.adj[link]].remove(link)
+                        self.counts[self.adj[link]+1] .add(link)
                         self.adj[link] += 1
                     
             
@@ -75,29 +75,32 @@ class Clique():
     def __repr__(self):
         return repr(self.data)
     
-    def __plus__(self, other):
+    def __add__(self, other):
         """Makes a new clique composed of this clique's data with the
         addition of a new node.
         other must be a Node.
         """
-        assert isinstance(other, node)
+        
         rv = Clique(self.data)
+        rv.adj = dict(self.adj)
+        rv.counts = [set(i) for i in self.counts]
         rv._add(node)
+        return rv
     
     def _add(self, node):
         """Adds a new node to this clique's data
         and updates the adjacency data structures."""
-        self.data |= node
+        self.data |= set((node,))
         for link in node.edges:
             if link in self.data:
                 #Whatever is in this clique is not adjacent to it.
                 continue
             if link not in self.adj:
-                self.adj[node] = 1
-                self.counts[1] |= link 
+                self.adj[link] = 1
+                self.counts[1].add(link) 
             else:
-                self.counts[self.adj[link]] -= link
-                self.counts[self.adj[link]+1] |= link
+                self.counts[self.adj[link]].remove(link)
+                self.counts[self.adj[link]+1].add(link)
                 self.adj[link] += 1
 
 with open(sys.argv[1], "r") as f:
@@ -156,28 +159,30 @@ else:
 t1 = time.time()
 for degree in range(4, len(nodes)+1):
     for clique in cliques[degree-1]:
-        for node in clique.data:
-            
-            #See if that node is in a new clique containing just the current
-            #clique and the new node.
-            in_clique = True
-            for link in node.edges.values():
-                if link in clique.data:
-                    #This would not make a larger clique of unique elements
-                    continue
-                if link in scanned_nodes:
-                    #Scanning this again would waste a lot of time.
-                    continue
-                for node in clique.data:
-                    if node not in link.edges.values():
-                        in_clique = False
-                scanned_nodes.add(link)
-            
-            if in_clique:
-                clique.subclique = True
-                temp_clique = Clique(clique.data | set((link,)))
-                cliques[degree].add(temp_clique)
-    scanned_nodes = set()
+        for node in clique.counts[degree-1]:
+            cliques[degree].add(clique + node)
+#         for node in clique.data:
+#             
+#             #See if that node is in a new clique containing just the current
+#             #clique and the new node.
+#             in_clique = True
+#             for link in node.edges.values():
+#                 if link in clique.data:
+#                     #This would not make a larger clique of unique elements
+#                     continue
+#                 if link in scanned_nodes:
+#                     #Scanning this again would waste a lot of time.
+#                     continue
+#                 for node in clique.data:
+#                     if node not in link.edges.values():
+#                         in_clique = False
+#                 scanned_nodes.add(link)
+#             
+#             if in_clique:
+#                 clique.subclique = True
+#                 temp_clique = clique + link
+#                 cliques[degree].add(temp_clique)
+#     scanned_nodes = set()
                 
 #Final code to take only the cliques that are not subcluques.
 #Also takes them out of their containers.
