@@ -36,7 +36,8 @@ class Node():
 class Clique():
     """A container with a frozenset of data containing nodes
     and the subclique flag.
-    Also stored a dict of adjacent nodes for searching for more cliques in. 
+    Also stored data structures of adjacent nodes for searching for
+    more cliques in. 
     """
 
     def __init__(self, data):
@@ -44,16 +45,22 @@ class Clique():
         self.data = frozenset(data)
         self.subclique = False
         if len(data) == 3:
+            #adj is used to search by name
+            #counts is used to search by number
             self.adj = {}
-            self.counts = [set() for i in range(len(nodes)-2)]  # @UnusedVariable
+            self.counts = [set() for i in range(len(nodes)-2)]# @UnusedVariable
             for node in data:
-                if node not in self.adj:
-                    self.adj[node] = 1
-                    self.counts[1] |= node 
-                else:
-                    self.counts[self.adj[node]] -= node
-                    self.counts[self.adj[node]+1] |= node
-                    self.adj[node] += 1
+                for link in node.edges.values():
+                    if link in data:
+                        #Whatever is in this clique is not adjacent to it.
+                        continue
+                    if link not in self.adj:
+                        self.adj[node] = 1
+                        self.counts[1] |= link 
+                    else:
+                        self.counts[self.adj[link]] -= link
+                        self.counts[self.adj[link]+1] |= link
+                        self.adj[link] += 1
                     
             
     def __hash__(self):
@@ -67,6 +74,31 @@ class Clique():
     
     def __repr__(self):
         return repr(self.data)
+    
+    def __plus__(self, other):
+        """Makes a new clique composed of this clique's data with the
+        addition of a new node.
+        other must be a Node.
+        """
+        assert isinstance(other, node)
+        rv = Clique(self.data)
+        rv._add(node)
+    
+    def _add(self, node):
+        """Adds a new node to this clique's data
+        and updates the adjacency data structures."""
+        self.data |= node
+        for link in node.edges:
+            if link in self.data:
+                #Whatever is in this clique is not adjacent to it.
+                continue
+            if link not in self.adj:
+                self.adj[node] = 1
+                self.counts[1] |= link 
+            else:
+                self.counts[self.adj[link]] -= link
+                self.counts[self.adj[link]+1] |= link
+                self.adj[link] += 1
 
 with open(sys.argv[1], "r") as f:
     for line in f:
