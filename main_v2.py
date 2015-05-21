@@ -7,6 +7,7 @@ Created on May 15, 2015
 import sys
 import time
 
+placeholder = range(100000)
 nodes = {}
 
 # scanned_nodes = set()
@@ -17,11 +18,11 @@ class Node():
         self.outg = {} #outgoing edges
         self.edges = {} #bidirectional edges
         
-#     def __eq__(self, other):
-#         return self.name.__eq__(other.name)
+    def __eq__(self, other):
+        return self.name.__eq__(other.name)
     
     def __lt__(self, other):
-        return self.name<other.name
+        return self.name < other.name
     
     def __hash__(self):
         return hash(self.name)
@@ -30,7 +31,7 @@ class Node():
         return self.name
     
     def __repr__(self):
-        return repr(self.name)
+        return "Node(%s)" % repr(self.name)
  
 class Clique():
     """A container with a frozenset of data containing nodes
@@ -79,7 +80,7 @@ class Clique():
         return str(self.data)
     
     def __repr__(self):
-        return repr(self.data)
+        return "Clique(%s)" % repr(self.data)
     
     def __add__(self, other):
         """Makes a new clique composed of this clique's data with the
@@ -96,7 +97,7 @@ class Clique():
         """Adds a new node to this clique's data
         and updates the adjacency data structures."""
         self.data |= set((node,))
-        for link in node.edges:
+        for link in node.edges.values():
             if link in self.data:
                 #Whatever is in this clique is not adjacent to it.
                 continue
@@ -161,12 +162,17 @@ else:
 #Find larger cliques
 #Not +2 because at len(nodes), we don't have any other nodes to join into the
 #clique.
-t1 = time.time()
-for degree in range(4, len(nodes)+1):
-    for clique in cliques[degree-1]:
-        nodes_to_check = clique.counts[degree-1]
-        for node in nodes_to_check:
-            cliques[degree].add(clique + node)
+try:
+    t1 = time.time()
+    for degree in range(4, len(nodes)+1):
+        for clique in cliques[degree-1]:
+            nodes_to_check = clique.counts[degree-1]
+            for node in nodes_to_check:
+                cliques[degree].add(clique + node)
+except MemoryError:
+    del placeholder
+    import pdb
+    pdb.set_trace()
 #         for node in clique.data:
 #             
 #             #See if that node is in a new clique containing just the current
