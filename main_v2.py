@@ -196,7 +196,7 @@ final_cliques = []
 for degree in range(3, len(nodes)+1):
     for clique in cliques[degree]:
         if not clique.subclique:
-            final_cliques.append(list(clique.data))
+            final_cliques.append(sorted(list(clique.data)))
 
 #Printing code
 for clique in sorted(final_cliques):
@@ -205,3 +205,16 @@ t2 = time.time()
 print(t2-t1)
 import pdb
 pdb.set_trace()
+
+# t@facebook.com, w@facebook.com, x@facebook.com, y@facebook.com, z@facebook.com
+# t@facebook.com, w@facebook.com, x@facebook.com, z@facebook.com
+# t@facebook.com, w@facebook.com, y@facebook.com, z@facebook.com
+# t@facebook.com, w@facebook.com, z@facebook.com
+# t@facebook.com, x@facebook.com, y@facebook.com, z@facebook.com
+# t@facebook.com, x@facebook.com, z@facebook.com
+# t@facebook.com, y@facebook.com, z@facebook.com
+# u@facebook.com, v@facebook.com, x@facebook.com, y@facebook.com, z@facebook.com
+# u@facebook.com, v@facebook.com, x@facebook.com, z@facebook.com
+# u@facebook.com, v@facebook.com, y@facebook.com, z@facebook.com
+# u@facebook.com, v@facebook.com, z@facebook.com
+# u@facebook.com, w@facebook.com, x@facebook.com, y@facebook.com, z@facebook.com

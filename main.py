@@ -135,8 +135,8 @@ final_cliques = []
 for degree in range(3, len(nodes)+1):
     for clique in cliques[degree]:
         if not clique.subclique:
-            final_cliques.append(list(clique.data))
+            final_cliques.append(sorted(list(clique.data)))
 
 #Printing code
 for clique in sorted(final_cliques):
-    print ", ".join(str(node)+"@facebook.com" for node in sorted(clique))
+    print ", ".join(str(node)+"@facebook.com" for node in clique)
