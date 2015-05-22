@@ -7,7 +7,6 @@ Created on May 15, 2015
 import sys
 import time
 
-placeholder = range(100000)
 nodes = {}
 
 # scanned_nodes = set()
@@ -38,14 +37,16 @@ class Clique():
     and the subclique flag.
     Also stored data structures of adjacent nodes for searching for
     more cliques in. 
+    
+    from_operation refers to wherther or not this node is being created out of an addition operation
     """
 
-    def __init__(self, data):
+    def __init__(self, data, from_operation=False):
         """Stores data. 
         data should be an iterable."""
         self.data = frozenset(data)
         self.subclique = False
-        if len(data) == 3:
+        if not from_operation:
             #adj is used to search by name
             #counts is used to search by number
             self.adj = {}
@@ -62,6 +63,12 @@ class Clique():
                         self.counts[self.adj[link]].remove(link)
                         self.counts[self.adj[link]+1] .add(link)
                         self.adj[link] += 1
+                    #Remove the link from the adjacency structures not that this link
+                    #no longer counts as adjacent.
+                    if node in self.adj:
+                        count = self.adj[node]
+                        del self.adj[node]
+                        self.counts[count].remove(node)
                     
             
     def __hash__(self):
@@ -87,7 +94,7 @@ class Clique():
         addition of a new node.
         other must be a Node.
         """
-        rv = Clique(self.data)
+        rv = Clique(self.data, from_operation=True)
         rv.adj = dict(self.adj)
         rv.counts = [set(i) for i in self.counts]
         rv._add(node)
@@ -108,6 +115,12 @@ class Clique():
                 self.counts[self.adj[link]].remove(link)
                 self.counts[self.adj[link]+1].add(link)
                 self.adj[link] += 1
+                #Remove the link from the adjacency structures not that this link
+                #no longer counts as adjacent.
+                if node in self.adj:
+                    count = self.adj[node]
+                    del self.adj[node]
+                    self.counts[count].remove(node)
 
 with open(sys.argv[1], "r") as f:
     for line in f:
@@ -141,7 +154,8 @@ with open(sys.argv[1], "r") as f:
         nodes[sender].outg[recip] = (nodes[recip])
 
 
-cliques = [set() for i in range(len(nodes)+1)]
+triangles = set()
+final_cliques = set()
 
 #put cliques of 3 nodes in cliques
 if len(nodes) < 3:
@@ -157,22 +171,34 @@ else:
                 if node in link2.edges.values():
                     #sorted by name
                     temp_clique = Clique([node, link1, link2])
-                    cliques[3].add(temp_clique)
+                    triangles.add(temp_clique)
+
+
 
 #Find larger cliques
-#Not +2 because at len(nodes), we don't have any other nodes to join into the
-#clique.
-try:
-    t1 = time.time()
-    for degree in range(4, len(nodes)+1):
-        for clique in cliques[degree-1]:
-            nodes_to_check = clique.counts[degree-1]
-            for node in nodes_to_check:
-                cliques[degree].add(clique + node)
-except MemoryError:
-    del placeholder
-    import pdb
-    pdb.set_trace()
+def examine(clique):
+    if clique.counts[len(clique.data)] == set():
+        if [i.name for i in sorted(list(clique.data))] == list("uwxz"):
+            import pdb
+            pdb.set_trace()  
+        #base case where this clique has no supercliques
+        final_cliques.add(clique.data)
+    else:
+        for link in clique.counts[len(clique.data)]:
+            examine(clique+link)
+        
+t1 = time.time()
+for triangle in triangles:
+    examine(triangle)
+
+
+#Not to +2 because at len(nodes), we don't have any other nodes to join into the
+#clique
+# for degree in range(4, len(nodes)+1):
+#     for clique in cliques[degree-1]:
+#         nodes_to_check = clique.counts[degree-1]
+#         for node in nodes_to_check:
+#             cliques[degree].add(clique + node)
 #         for node in clique.data:
 #             
 #             #See if that node is in a new clique containing just the current
@@ -198,19 +224,19 @@ except MemoryError:
                 
 #Final code to take only the cliques that are not subcluques.
 #Also takes them out of their containers.
-final_cliques = []
-for degree in range(3, len(nodes)+1):
-    for clique in cliques[degree]:
-        if not clique.subclique:
-            final_cliques.append(sorted(list(clique.data)))
+# final_cliques = []
+# for degree in range(3, len(nodes)+1):
+#     for clique in cliques[degree]:
+#         if not clique.subclique:
+#             final_cliques.append(sorted(list(clique.data)))
+
+final_cliques = [sorted(list(i)) for i in final_cliques]
 
 #Printing code
 for clique in sorted(final_cliques):
-    print ", ".join(str(node)+"@facebook.com" for node in sorted(clique))
+    print ", ".join(str(node)+"@facebook.com" for node in clique)
 t2 = time.time()
 print(t2-t1)
-import pdb
-pdb.set_trace()
 
 # t@facebook.com, w@facebook.com, x@facebook.com, y@facebook.com, z@facebook.com
 # t@facebook.com, w@facebook.com, x@facebook.com, z@facebook.com
