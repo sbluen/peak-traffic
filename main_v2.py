@@ -97,7 +97,7 @@ class Clique():
         rv = Clique(self.data, from_operation=True)
         rv.adj = dict(self.adj)
         rv.counts = [set(i) for i in self.counts]
-        rv._add(node)
+        rv._add(other)
         return rv
     
     def _add(self, node):
@@ -121,6 +121,9 @@ class Clique():
                     count = self.adj[node]
                     del self.adj[node]
                     self.counts[count].remove(node)
+    
+    def str2(self):
+        return "".join(i.name for i in self.data)
 
 with open(sys.argv[1], "r") as f:
     for line in f:
@@ -173,17 +176,20 @@ else:
                     temp_clique = Clique([node, link1, link2])
                     triangles.add(temp_clique)
 
-
+stored_cliques = set()
 
 #Find larger cliques
 def examine(clique):
+    if clique.str2() in stored_cliques:
+        return
     if clique.counts[len(clique.data)] == set():
-        if [i.name for i in sorted(list(clique.data))] == list("uwxz"):
-            import pdb
-            pdb.set_trace()  
+#         if [i.name for i in sorted(list(clique.data))] == list("uwxz"):
+#             import pdb
+#             pdb.set_trace()  
         #base case where this clique has no supercliques
         final_cliques.add(clique.data)
     else:
+        stored_cliques.add(clique.str2())
         for link in clique.counts[len(clique.data)]:
             examine(clique+link)
         
